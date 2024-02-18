@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Questiontable from './QuestionTable';
+import { getQuestions, addQuestion, updateQuestion, deleteQuestion } from './api';
 const QuestionForm = () => {
     const [questions, setQuestions] = useState([]);
     const [isEdit, setIsEdit] = useState({
         key: false,
-        index: null
+        _id: null
     });
     const [formData, setFormData] = useState({
         name: '',
@@ -17,7 +18,7 @@ const QuestionForm = () => {
     const [isModalOpen, setIsModalOpen] = useState({
         key: false,
         data: null,
-        index: null
+        _id: null
     });
     const [validation, setValidation] = useState({
         name: null,
@@ -26,6 +27,29 @@ const QuestionForm = () => {
         sequence: null,
         options: null,
     })
+
+    const loadQuestions = async () => {
+        try {
+            let questionsData = await getQuestions();
+            questionsData = questionsData.sort((a, b) => a.sequence - b.sequence);
+            setQuestions(questionsData);
+            closeModal();
+            setFormData((pervState) => ({
+                name: '',
+                type: 'text',
+                requirement: false,
+                sequence: questionsData.length>0 ? questionsData[questionsData.length - 1].sequence + 1 : 1,
+                options: null,
+            }));
+        } catch (error) {
+            console.error("Error loading questions:", error);
+        }
+    };
+
+    useEffect(() => {
+        loadQuestions();
+    }, []);
+
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData((prevData) => ({
@@ -44,7 +68,7 @@ const QuestionForm = () => {
         setFieldOptions([...fieldOptions.slice(0, index), ...fieldOptions.slice(index + 1)]);
     }
 
-    const addQuestion = (e) => {
+    const handleAddQuestion = async (e) => {
         e.preventDefault();
         if (formData.name.trim() === '') {
             setValidation((prevValidation) => ({ ...prevValidation, name: 'Please enter a question title.' }));
@@ -52,50 +76,38 @@ const QuestionForm = () => {
         }
         if (isEdit.key) {
             console.log(formData);
-            setQuestions((prevQuestions) => [...prevQuestions.slice(0, isEdit.index), { ...formData, options: (formData.type === 'checkbox' || formData.type === 'radio') ? fieldOptions : null }, ...prevQuestions.slice(isEdit.index + 1)]);
+            const questionData = { ...formData, options: (formData.type === 'checkbox' || formData.type === 'radio') ? fieldOptions : null };
+            await updateQuestion(isEdit._id, questionData);
             setIsEdit({
                 key: false,
-                index: null
+                _id: null
             });
         } else {
-            setQuestions((prevQuestions) => [...prevQuestions, { ...formData, options: (formData.type === 'checkbox' || formData.type === 'radio') ? fieldOptions : null }]);
+            const questionData = { ...formData, options: (formData.type === 'checkbox' || formData.type === 'radio') ? fieldOptions : null };
+            await addQuestion(questionData);
         }
-        setFormData((pervState) => ({
-            name: '',
-            type: 'text',
-            requirement: false,
-            sequence: questions.length + 2,
-            options: null,
-        }));
         setFieldOptions(["Option1"]);
+        loadQuestions();
     };
 
-    const handleUpdateQuestion = (index, el) => {
+    const handleUpdateQuestion = (_id, el) => {
         setIsEdit({
             key: true,
-            index: index
+            _id: _id
         });
         setFormData(() => ({ ...el, options: null }));
         el.options && setFieldOptions(el.options);
     }
-    const handleDeleteQuestion = (index) => {
-        const sequence = questions.length;
-        setQuestions((questions) => ([...questions.slice(0, index), ...questions.slice(index + 1)]));
+    const handleDeleteQuestion = async (_id) => {
+        await deleteQuestion(_id);
         closeModal();
-        setFormData((pervState) => ({
-            name: '',
-            type: 'text',
-            requirement: false,
-            sequence: sequence,
-            options: null,
-        }));
-
+        loadQuestions();
     }
-    const openModal = (index, el) => {
+    const openModal = (_id, el) => {
         setIsModalOpen((prevState) => ({
             key: true,
             data: el,
-            index: index
+            _id: _id
         }));
     };
 
@@ -103,13 +115,14 @@ const QuestionForm = () => {
         setIsModalOpen({
             key: false,
             data: null,
-            index: null
+            _id: null
         });
     };
 
+
     return (
         <>
-            <form onSubmit={addQuestion}>
+            <form onSubmit={handleAddQuestion}>
                 <div className="row mt-2 mb-2">
                     <div className="col-4 p-2">
                         <label className="form-label">
@@ -206,7 +219,7 @@ const QuestionForm = () => {
             </form>
             <div>
                 <h2 className='text-center mt-3 mb-4'>Questions List</h2>
-                <Questiontable tbData={questions} openModal={(index, el) => openModal(index, el)} handleUpdateQuestion={(index, el) => handleUpdateQuestion(index, el)} />
+                <Questiontable tbData={questions} openModal={(_id, el) => openModal(_id, el)} handleUpdateQuestion={(_id, el) => handleUpdateQuestion(_id, el)} />
 
             </div>
             {isModalOpen.key && (
@@ -235,7 +248,7 @@ const QuestionForm = () => {
                                 <button type="button" className="btn btn-secondary" onClick={closeModal}>
                                     Close
                                 </button>
-                                <button type="button" onClick={() => handleDeleteQuestion(isModalOpen.index)} className="btn btn-danger">
+                                <button type="button" onClick={() => handleDeleteQuestion(isModalOpen._id)} className="btn btn-danger">
                                     Delete
                                 </button>
                             </div>

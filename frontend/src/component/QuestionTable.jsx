@@ -33,8 +33,8 @@ const Questiontable = (props) => {
                         </td>
                         <td>
                             <div className="d-flex align-items-center" style={{ gap: "10px" }}>
-                                <i onClick={() => props.openModal(index, el)} className="bi bi-trash3-fill text-danger fs-4" style={{ cursor: "pointer" }}></i>
-                                <i onClick={() => props.handleUpdateQuestion(index, el)} className="bi bi-pencil-square text-primary fs-4" style={{ cursor: "pointer" }}></i>
+                                <i onClick={() => props.openModal(el._id, el)} className="bi bi-trash3-fill text-danger fs-4" style={{ cursor: "pointer" }}></i>
+                                <i onClick={() => props.handleUpdateQuestion(el._id, el)} className="bi bi-pencil-square text-primary fs-4" style={{ cursor: "pointer" }}></i>
                             </div>
                         </td>
                     </tr>
