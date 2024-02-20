@@ -1,7 +1,7 @@
 // api.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000/api/questions';
+const BASE_URL = String(import.meta.env.VITE_API_BASE_URL);
 
 const api = axios.create({
   baseURL: BASE_URL,

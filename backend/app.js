@@ -2,10 +2,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 const questionRoutes = require("./route");
 const cors = require("cors");
-
+require('dotenv').config();
 const app = express();
-const PORT = process.env.PORT || 3000;
-const MONGODB_URI = "mongodb+srv://iammayankgangwarbly:prince99@cluster0.rhnec5i.mongodb.net/Agropean?retryWrites=true&w=majority"; // Use 127.0.0.1 instead of localhost
+const PORT = process.env.PORT;
+const MONGODB_URI = String(process.env.LIVE_DB_URL) || String(process.env.LOCAL_DB_URL);
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
